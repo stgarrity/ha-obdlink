@@ -88,7 +88,7 @@ on. Vehicle support varies. No actual odometer is exposed unless it has been
 separately verified; distance since fault clearing is **not** an odometer.
 
 Use one adapter per vehicle. Moving an adapter to another vehicle can otherwise
-associate old snapshots with the new vehicle; remove/reconfigure the entry first.
+associate old snapshots with the new vehicle; remove the entry and set it up again.
 
 All vehicle addresses, proxy selection, cached protocol, readings, and timestamps
 stay in your Home Assistant configuration/storage. The integration does not
