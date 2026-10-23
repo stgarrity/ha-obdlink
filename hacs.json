@@ -1,7 +1,5 @@
 {
   "name": "OBDLink BLE",
   "homeassistant": "2026.10.0",
-  "zip_release": true,
-  "filename": "obdlink_ble.zip",
   "hide_default_branch": true
 }
