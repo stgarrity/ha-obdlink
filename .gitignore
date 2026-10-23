@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+proxies.local.json
+results/
+dist/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.DS_Store

@@ -1,0 +1,10 @@
+capture:
+  name: Capture vehicle snapshot
+  description: One bounded read-only fuel and check-engine capture. Does not start periodic polling.
+  fields:
+    entry_id:
+      name: Vehicle integration
+      required: true
+      selector:
+        config_entry:
+          integration: obdlink_ble

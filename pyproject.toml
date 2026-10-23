@@ -1,0 +1,34 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "obdlink-ble"
+version = "0.1.0"
+description = "Read-only OBDLink BLE UART snapshots and advertisement-driven arrival detection"
+requires-python = ">=3.13"
+dependencies = []
+readme = "README.md"
+license = "MIT"
+authors = [{name = "OBDLink BLE contributors"}]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: AsyncIO",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Home Automation",
+]
+
+[project.urls]
+Homepage = "https://github.com/stgarrity/ha-obdlink"
+Issues = "https://github.com/stgarrity/ha-obdlink/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/obdlink_ble"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/obdlink_ble", "pyproject.toml", "README.md", "LICENSE"]
+
+[tool.uv]
+exclude-newer = "2026-10-16T00:00:00Z"

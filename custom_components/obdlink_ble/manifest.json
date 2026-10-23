@@ -1,0 +1,14 @@
+{
+  "domain": "obdlink_ble",
+  "name": "OBDLink BLE",
+  "version": "0.1.0",
+  "config_flow": true,
+  "dependencies": ["bluetooth", "esphome"],
+  "bluetooth": [{"local_name": "OBDLink CX*", "connectable": true}],
+  "codeowners": ["@stgarrity"],
+  "documentation": "https://github.com/stgarrity/ha-obdlink",
+  "issue_tracker": "https://github.com/stgarrity/ha-obdlink/issues",
+  "iot_class": "local_push",
+  "integration_type": "device",
+  "requirements": ["obdlink-ble==0.1.0"]
+}

@@ -1,0 +1,10 @@
+version = 1
+requires-python = ">=3.13"
+
+[options]
+exclude-newer = "2026-10-16T00:00:00Z"
+
+[[package]]
+name = "obdlink-ble"
+version = "0.1.0"
+source = { editable = "." }

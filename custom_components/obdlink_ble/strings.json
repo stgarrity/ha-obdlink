@@ -1,0 +1,21 @@
+{
+  "title": "OBDLink BLE",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up vehicle arrival capture",
+        "description": "Authorize this adapter to establish encrypted Bluetooth connections. Fuel and check-engine status are read once when the adapter appears after at least two minutes away. There is no continuous parked polling.",
+        "data": {
+          "name": "Vehicle name",
+          "address": "Adapter Bluetooth address",
+          "proxy_source": "Existing ESPHome Bluetooth proxy"
+        }
+      }
+    },
+    "error": {"invalid_configuration": "Enter a valid address, vehicle name, and available proxy."},
+    "abort": {
+      "already_configured": "This adapter is already configured.",
+      "no_proxy": "No connectable ESPHome Bluetooth proxy is available."
+    }
+  }
+}
