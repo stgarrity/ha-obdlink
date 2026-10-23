@@ -32,9 +32,13 @@ class VehicleEntity(CoordinatorEntity[VehicleCoordinator]):
     @property
     def extra_state_attributes(self) -> dict:
         data = self.coordinator.data
+        reading = self.reading
         return {
             "last_updated": self.reading["captured_at"] if self.reading else None,
             "last_attempt": data["last_attempt"],
             "last_error": data["last_error"],
             "snapshot": True,
+            "capture_source": (
+                "imported_snapshot" if reading.get("imported") else "vehicle"
+            ) if reading else None,
         }

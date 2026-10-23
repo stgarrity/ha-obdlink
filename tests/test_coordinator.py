@@ -201,3 +201,51 @@ class CoordinatorTests(unittest.IsolatedAsyncioTestCase):
         async with coordinator.lock:
             coordinator._advertisement(SimpleNamespace(source="proxy", time=100))
             self.assertIsNone(coordinator.capture_task)
+
+    async def test_import_preserves_historical_timestamp_without_replacing_newer_data(self):
+        coordinator, _, _ = coordinator_fixture()
+        original = {"value": 10.5, "captured_at": "2020-01-01T00:00:00+00:00"}
+        result = await coordinator.async_import_snapshot({"fuel_level": original})
+        self.assertEqual(result["imported"], ["fuel_level"])
+        reading = coordinator.data["readings"]["fuel_level"]
+        self.assertEqual(reading["captured_at"], original["captured_at"])
+        self.assertTrue(reading["imported"])
+        await coordinator._publish("fuel_level", 12.5)
+        result = await coordinator.async_import_snapshot({"fuel_level": original})
+        self.assertEqual(result["retained_newer"], ["fuel_level"])
+        self.assertEqual(coordinator.data["readings"]["fuel_level"]["value"], 12.5)
+        self.assertNotIn("imported", coordinator.data["readings"]["fuel_level"])
+        for invalid in (
+            {"value": 101, "captured_at": original["captured_at"]},
+            {"value": False, "captured_at": original["captured_at"]},
+            {"value": 10, "captured_at": "2020-01-01T00:00:00"},
+            {"value": 10, "captured_at": "2999-01-01T00:00:00+00:00"},
+        ):
+            with self.assertRaises(ValueError):
+                await coordinator.async_import_snapshot({"fuel_level": invalid})
+
+    async def test_entity_labels_imported_snapshots_and_then_live_values(self):
+        class EntityBase(CoordinatorBase):
+            def __init__(self, coordinator):
+                self.coordinator = coordinator
+
+        path = Path(__file__).parents[1] / "custom_components/obdlink_ble/entity.py"
+        nodes = [node for node in ast.parse(path.read_text()).body if isinstance(node, ast.ClassDef)]
+        namespace = {
+            "CoordinatorEntity": EntityBase, "VehicleCoordinator": CoordinatorBase,
+            "DeviceInfo": dict, "DOMAIN": "obdlink_ble",
+        }
+        exec(compile(ast.Module(body=nodes, type_ignores=[]), str(path), "exec"), namespace)
+        coordinator, _, _ = coordinator_fixture()
+        coordinator.entry.data["name"] = "Vehicle"
+        entity = namespace["VehicleEntity"](coordinator, "fuel_level")
+        self.assertFalse(entity.available)
+        self.assertIsNone(entity.extra_state_attributes["capture_source"])
+        original = {"value": 10.5, "captured_at": "2020-01-01T00:00:00+00:00"}
+        await coordinator.async_import_snapshot({"fuel_level": original})
+        self.assertTrue(entity.available)
+        self.assertEqual(entity.extra_state_attributes["capture_source"], "imported_snapshot")
+        self.assertEqual(entity.extra_state_attributes["last_updated"], original["captured_at"])
+        await coordinator._publish("fuel_level", 10.5)
+        self.assertEqual(entity.extra_state_attributes["capture_source"], "vehicle")
+        self.assertNotEqual(entity.extra_state_attributes["last_updated"], original["captured_at"])

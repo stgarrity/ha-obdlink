@@ -67,6 +67,13 @@ If they shut down before the capture, old readings remain with their timestamps.
 The administrative `obdlink_ble.capture` action takes a config-entry `entry_id`
 and requests one manual snapshot. It does not enable periodic polling.
 
+For migration or recovery, the administrative `obdlink_ble.import_snapshot`
+action accepts `entry_id` and a `readings` mapping. Each `fuel_level` or
+`check_engine` record must contain its `value` and original timezone-aware
+`captured_at` timestamp. It rejects invalid/future data, never replaces newer
+readings, and marks restored values with `capture_source: imported_snapshot`.
+Importing historical data does not claim that the vehicle was just read.
+
 ## Scope and safety
 
 Only read-only standard OBD diagnostics and temporary adapter text/protocol

@@ -47,20 +47,49 @@ class VehicleCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if (stored := await self.store.async_load()) is not None:
             if not isinstance(stored, dict) or not isinstance(stored.get("readings"), dict):
                 raise ValueError("Invalid saved OBDLink state; refusing to fabricate readings.")
-            for key, reading in stored["readings"].items():
-                if key not in ("fuel_level", "check_engine") or not isinstance(reading, dict):
-                    raise ValueError("Invalid saved OBDLink reading.")
-                value, captured = reading.get("value"), reading.get("captured_at")
-                valid_value = (
-                    isinstance(value, bool) if key == "check_engine"
-                    else type(value) in (int, float) and 0 <= value <= 100
-                )
-                if not valid_value or not isinstance(captured, str):
-                    raise ValueError("Invalid saved OBDLink value or timestamp.")
-                if datetime.fromisoformat(captured).tzinfo is None:
-                    raise ValueError("Saved OBDLink timestamps must have a timezone.")
+            self._validate_readings(stored["readings"])
             self.data.update(stored)
             self.gate.last_seen = stored.get("last_seen")
+
+    @staticmethod
+    def _validate_readings(readings: dict) -> None:
+        for key, reading in readings.items():
+            if key not in ("fuel_level", "check_engine") or not isinstance(reading, dict):
+                raise ValueError("Invalid saved OBDLink reading.")
+            value, captured = reading.get("value"), reading.get("captured_at")
+            valid_value = (
+                isinstance(value, bool) if key == "check_engine"
+                else type(value) in (int, float) and 0 <= value <= 100
+            )
+            if not valid_value or not isinstance(captured, str):
+                raise ValueError("Invalid saved OBDLink value or timestamp.")
+            if datetime.fromisoformat(captured).tzinfo is None:
+                raise ValueError("Saved OBDLink timestamps must have a timezone.")
+
+    async def async_import_snapshot(self, readings: dict) -> dict:
+        """Restore verified historical data without refreshing its timestamp."""
+        if self.lock.locked():
+            raise ProbeError("Cannot import a snapshot while a capture is running.")
+        self._validate_readings(readings)
+        now = datetime.now(timezone.utc)
+        if any(datetime.fromisoformat(item["captured_at"]) > now for item in readings.values()):
+            raise ValueError("Imported snapshots cannot have future timestamps.")
+        imported, retained = [], []
+        async with self.lock:
+            updated = dict(self.data["readings"])
+            for key, reading in readings.items():
+                existing = updated.get(key)
+                if existing and datetime.fromisoformat(existing["captured_at"]) >= datetime.fromisoformat(reading["captured_at"]):
+                    retained.append(key)
+                    continue
+                updated[key] = {
+                    "value": reading["value"], "captured_at": reading["captured_at"],
+                    "imported": True,
+                }
+                imported.append(key)
+            self.async_set_updated_data({**self.data, "readings": updated})
+            await self._save()
+        return {"success": True, "imported": imported, "retained_newer": retained}
 
     def async_start(self) -> None:
         self.unsubscribe = bluetooth.async_register_advertisement_callback(

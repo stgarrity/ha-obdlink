@@ -8,3 +8,19 @@ capture:
       selector:
         config_entry:
           integration: obdlink_ble
+import_snapshot:
+  name: Import historical snapshot
+  description: Restore verified historical readings with their original capture timestamps. Never replaces newer readings. Imported values are explicitly marked.
+  fields:
+    entry_id:
+      name: Vehicle integration
+      required: true
+      selector:
+        config_entry:
+          integration: obdlink_ble
+    readings:
+      name: Historical readings
+      description: Mapping of fuel_level/check_engine to objects containing value and timezone-aware captured_at.
+      required: true
+      selector:
+        object:
